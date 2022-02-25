@@ -1,0 +1,140 @@
+<?php
+require APPPATH.'/libraries/JWT.php';
+
+class Login_model extends CI_Model
+{
+    public function module($headers){
+        if($headers['Module'] == 'admin-login')
+        {
+            return $this->adminLogin($headers);
+        } else if($headers['Module'] == 'user-login')
+        {
+            return $this->userLogin($headers);
+        } else {
+            $responce['status'] = 0;
+            $responce['message'] = 'Something is wrong';
+            $responce['data'] = '';
+            return $responce;
+        }
+        
+    }
+    
+    
+    public function verify($token , $key){
+        // print_r($token);die();
+        // print_r(JWT::decode($token, $key, array('HS256')));die();
+        // $jwtToken_decode = JWT::decode($token, $key, array('HS256'));
+        // $decodedData = (array) $jwtToken_decode;
+        
+        // print_r($decodedData);die();
+    }
+
+    function adminLogin($headers){
+        if((!$_POST['username']) && (($_POST['username'] == null)))
+        {
+            $responce['status'] = 0;
+            $responce['message'] = 'Username is required';
+            $responce['data'] = '';
+            return $responce;
+        } else if((!$_POST['password']) && (($_POST['password'] == null)))
+        {
+            $responce['status'] = 0;
+            $responce['message'] = 'Password is required';
+            $responce['data'] = '';
+            return $responce;
+        } else {
+            $this->db->where('user_name',$_POST['username']);
+            $this->db->where('password',md5($_POST['password']));
+            $result = $this->db->get('users_headoffice');
+            $data = $result->result_array();
+            
+            //print_r($this->db->last_query());die();
+            
+            $user ='';
+            foreach($data as $userData)
+            {
+                $user = $userData['user_name'];
+            }
+            
+            //details
+            $data['token'] =  JWT::encode($_POST['username'], $headers['key']);
+            
+            //todays rates details
+            $rate =  $this->db->get('master_today_market_price');
+            $data['todays'] = $rate->result_array();
+
+            //todays rates details
+            $purity =  $this->db->get('master_item_purity');
+            $data['purity'] = $purity->result_array();
+            
+            if($user == $_POST['username'])
+            {
+                $responce['status'] = 1;
+                $responce['message'] = 'Login successfull!';
+                $responce['data'] = $data;
+                return $responce;
+            } else {
+                $responce['status'] = 0;
+                $responce['message'] = 'Username password incurrect';
+                $responce['data'] = '';
+                return $responce;
+            }
+        }
+    }
+    
+    function userLogin($headers){
+        if((!$_POST['username']) && (($_POST['username'] == null)))
+        {
+            $responce['status'] = 0;
+            $responce['message'] = 'Username is required';
+            $responce['data'] = '';
+            return $responce;
+        } else if((!$_POST['password']) && (($_POST['password'] == null)))
+        {
+            $responce['status'] = 0;
+            $responce['message'] = 'Password is required';
+            $responce['data'] = '';
+            return $responce;
+        } else {
+            $this->db->where('user_name',$_POST['username']);
+            $this->db->where('password',md5($_POST['password']));
+            //  $this->db->join('master_branch', 'users.branch= master_branch.id');
+            $result = $this->db->get('users');
+            $data = $result->result_array();
+            
+            // print_r(count($data));die();
+            
+            $user ='';
+            foreach($data as $userData)
+            {
+                $user = $userData['user_name'];
+            }
+            
+            //details
+            $data['token'] =  JWT::encode($_POST['username'], $headers['key']);
+
+
+            //todays rates details
+            $rate =  $this->db->get('master_today_market_price');
+            $data['todays'] = $rate->result_array();
+            
+            //todays rates details
+            $purity =  $this->db->get('master_item_purity');
+            $data['purity'] = $purity->result_array();
+            
+            if($user == $_POST['username'])
+            {
+                $responce['status'] = 1;
+                $responce['message'] = 'Login successfull!';
+                $responce['data'] = $data;
+                return $responce;
+            } else {
+                $responce['status'] = 0;
+                $responce['message'] = 'Username password incorrect';
+                $responce['data'] = '';
+                return $responce;
+            }
+        }
+        
+    }
+}
